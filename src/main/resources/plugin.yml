@@ -1,0 +1,5 @@
+name: PintoBridge
+version: '${version}'
+
+main: me.pintoadmin.pintoBridge.PintoBridge
+api-version: '26.1'
