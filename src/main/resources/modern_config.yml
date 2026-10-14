@@ -1,0 +1,127 @@
+isolatedplayerlist: false # whether player's not actively playing will show up on the tablist/playerlist
+bridge1: # world name - can be anything
+  enabled: false
+  startingitems: # The order the items are in is the order they will appear on the hotbar
+    - STONE_SWORD # specify item with the item id
+    - BOW:1:[punch=1]
+    - DIAMOND_PICKAXE:1:[efficiency=2]
+    - GOLDEN_APPLE:8
+    - terracotta:64 # specify amount with :<num>
+    - terracotta:64
+    - LEATHER_HELMET # Armor pieces will be automatically dyed and equipped
+    - LEATHER_CHESTPLATE
+    - LEATHER_LEGGINGS
+    - LEATHER_BOOTS
+  arrowslot: 9
+
+  canbreak: # same as above but without amounts or enchants
+    - terracottas
+
+  teams:
+    - color: red # team color, must be in the Minecraft's color list
+      portal: # coords for team's portal
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
+      spawnlocation: # coords for team's spawn
+        x: 25.0
+        y: 0.0
+        z: 5.0
+    - color: blue
+      portal:
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
+      spawnlocation:
+        x: -15.0
+        y: 0.0
+        z: -5.0
+
+  facinglocation: # location that players will face when they spawn
+    x: 0
+    z: 0
+  endlocation: # location that the players will be teleported to after the game
+    world: lobby
+    x: 0
+    y: 64
+    z: 0
+
+  playersperteam: 1 # Number of players per team. 1 for duels, 2 for duos, etc.
+  deathheight: -50 # y level that players will be killed at
+  candropitems: false # whether players are allowed to drop items
+  scoreboard:
+    title: "SERVER NAME"
+    titlecolor: aqua
+    ip: "mc.example.com"
+    ipcolor: yellow
+  gamerules: # Set boolean gamerules (1.13+)
+    doImmediateRespawn: true
+    fallDamage: false
+
+bridge2:
+  enabled: false
+  startingitems:
+    - STONE_SWORD # specify item with the item id
+    - BOW:1:[punch=1]
+    - DIAMOND_PICKAXE:1:[efficiency=2]
+    - GOLDEN_APPLE:8
+    - terracotta:64 # specify amount with :<num>
+    - terracotta:64
+    - leather_armor
+  armorslot: 9
+
+  canbreak:
+    - terracottas
+
+  teams:
+    - color: red
+      portal:
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
+      spawnlocation:
+        x: 25.0
+        y: 0.0
+        z: 5.0
+    - color: blue
+      portal:
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
+      spawnlocation:
+        x: -15.0
+        y: 0.0
+        z: -5.0
+
+  facinglocation:
+    x: 0
+    z: 0
+  endlocation:
+    world: world
+    x: 0
+    y: 64
+    z: 0
+
+  playersperteam: 2
+  deathheight: -50
+  candropitems: false
+  scoreboard:
+    title: "SERVER NAME"
+    titlecolor: aqua
+    ip: "mc.example.com"
+    ipcolor: yellow
+  gamerules:
+    doImmediateRespawn: true
+    fallDamage: false
