@@ -3,6 +3,7 @@ package me.pintoadmin.pintoFBF;
 import me.pintoadmin.pintoBridge.*;
 import org.bukkit.*;
 import org.bukkit.block.*;
+import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
@@ -16,6 +17,7 @@ import java.util.*;
 public class BridgeGame_26_3 extends BridgeGame {
     private final PintoBridge pintoBridge;
     private final FileConfiguration config;
+    private final ConfigurationSection gameCfg;
     private final String name;
     private World world;
     private boolean playing = false;
@@ -40,15 +42,51 @@ public class BridgeGame_26_3 extends BridgeGame {
     private final Map<UUID, ItemStack[]> oldInventories = new HashMap<>();
     private final List<BukkitTask> runningTasks = new ArrayList<>();
 
+    private String boardTitle;
+    private String boardIP;
+    private String boardTitleColor;
+    private String boardIPColor;
+
     public BridgeGame_26_3(PintoBridge pintoBridge, String name) {
         this.pintoBridge = pintoBridge;
         this.config = pintoBridge.getConfig();
+        this.gameCfg = config.getConfigurationSection(name);
         this.name = name;
     }
 
     @Override
     public void init() {
+        playing = false;
+        teamsMaps = gameCfg.getMapList("teams");
+        teams = new ArrayList<>();
+        scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        enabled = gameCfg.getBoolean("enabled");
+        List<String> startingItemsStr = gameCfg.getStringList("startingitems");
+        List<String> breakablesStr = gameCfg.getStringList("startingitems");
+        facingLocation = getFacing(5d);
+        deathHeight = gameCfg.getInt("deathheight", -64);
+        canDrop = gameCfg.getBoolean("candropitems", false);
+        playersPerTeam = gameCfg.getInt("playersperteam", 1);
 
+        ConfigurationSection endSection = gameCfg.getConfigurationSection("endlocation");
+        endWorldName = endSection != null ? endSection.getString("world", "world") : "world";
+        endLocation = getVector("endlocation");
+
+        ConfigurationSection boardSection = gameCfg.getConfigurationSection("scoreboard");
+        if (boardSection == null) {
+            pintoBridge.getLogger()
+                    .severe("No 'scoreboard' section for game " + name + " - using defaults");
+            boardSection = config.createSection(name + ".scoreboard");
+        }
+        boardTitle = boardSection.getString("title", "SERVER");
+        boardIP = boardSection.getString("ip", "");
+        boardTitleColor = boardSection.getString("titlecolor", "AQUA");
+        boardIPColor = boardSection.getString("ipcolor", "YELLOW");
+
+        startingItems = new ArrayList<>();
+        breakables = new ArrayList<>();
+        spectators = new LinkedHashSet<>();
+        teamSpawns = new HashMap<>();
     }
 
     @Override
@@ -82,6 +120,24 @@ public class BridgeGame_26_3 extends BridgeGame {
 
             blockChanges.remove(entry);
         }
+    }
+
+
+    private Vector getVector(String path) {
+        ConfigurationSection section = gameCfg.getConfigurationSection(path);
+        if (section == null) return null;
+        double x = section.getDouble("x");
+        double y = section.getDouble("y");
+        double z = section.getDouble("z");
+        return new Vector(x, y, z);
+    }
+
+    private Vector getFacing(Double yVal) {
+        ConfigurationSection facingLocation = gameCfg.getConfigurationSection("facinglocation");
+        if (facingLocation == null) return null;
+        double x = facingLocation.getDouble("x");
+        double z = facingLocation.getDouble("z");
+        return new Vector(x, yVal, z);
     }
 
     @Override
