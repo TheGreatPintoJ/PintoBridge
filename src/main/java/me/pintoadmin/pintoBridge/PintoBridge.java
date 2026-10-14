@@ -1,12 +1,11 @@
 package me.pintoadmin.pintoBridge;
 
-import org.bukkit.configuration.file.*;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import java.io.*;
 import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
+import org.bukkit.configuration.file.*;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PintoBridge extends JavaPlugin {
     private final Map<String, BridgeGame> games = new HashMap<>(); // world to game instance
@@ -17,9 +16,7 @@ public final class PintoBridge extends JavaPlugin {
     /** BlockData arrived with the 1.13 flattening, which is exactly the line the two split on. */
     private static final String FLATTENING_MARKER = "org.bukkit.block.data.BlockData";
 
-    /**
-     * EntityType.ITEM was renamed from DROPPED_ITEM in 1.20.5 - the real floor.
-     */
+    /** EntityType.ITEM was renamed from DROPPED_ITEM in 1.20.5 - the real floor. */
     private static final String MODERN_MARKER =
             "org.bukkit.inventory.meta.components.FoodComponent";
 
@@ -89,6 +86,7 @@ public final class PintoBridge extends JavaPlugin {
             throw new IllegalStateException("PintoFBF could not load " + impl, t);
         }
     }
+
     private static boolean classExists(String name) {
         try {
             Class.forName(name);

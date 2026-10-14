@@ -1,5 +1,6 @@
 package me.pintoadmin.pintoFBF;
 
+import java.util.*;
 import me.pintoadmin.pintoBridge.*;
 import org.bukkit.*;
 import org.bukkit.block.*;
@@ -11,8 +12,6 @@ import org.bukkit.scheduler.*;
 import org.bukkit.scoreboard.*;
 import org.bukkit.util.*;
 import org.bukkit.util.Vector;
-
-import java.util.*;
 
 public class BridgeGame_26_3 extends BridgeGame {
     private final PintoBridge pintoBridge;
@@ -74,7 +73,8 @@ public class BridgeGame_26_3 extends BridgeGame {
 
         ConfigurationSection boardSection = gameCfg.getConfigurationSection("scoreboard");
         if (boardSection == null) {
-            pintoBridge.getLogger()
+            pintoBridge
+                    .getLogger()
                     .severe("No 'scoreboard' section for game " + name + " - using defaults");
             boardSection = config.createSection(name + ".scoreboard");
         }
@@ -90,24 +90,16 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
-    public void start() {
-
-    }
+    public void start() {}
 
     @Override
-    public void end(boolean forceEnd) {
-
-    }
+    public void end(boolean forceEnd) {}
 
     @Override
-    public void join(Player player) {
-
-    }
+    public void join(Player player) {}
 
     @Override
-    public void leave(Player player) {
-
-    }
+    public void leave(Player player) {}
 
     private void undoBlockChanges() {
         LinkedList<BlockState> changes = new LinkedList<>();
@@ -121,7 +113,6 @@ public class BridgeGame_26_3 extends BridgeGame {
             blockChanges.remove(entry);
         }
     }
-
 
     private Vector getVector(String path) {
         ConfigurationSection section = gameCfg.getConfigurationSection(path);

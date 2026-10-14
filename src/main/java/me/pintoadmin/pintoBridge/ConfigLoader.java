@@ -1,9 +1,8 @@
 package me.pintoadmin.pintoBridge;
 
+import java.util.*;
 import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
-
-import java.util.*;
 
 public class ConfigLoader {
     private final PintoBridge pintoFBF;
@@ -14,9 +13,7 @@ public class ConfigLoader {
         this.config = config;
     }
 
-    public void start(){
-
-    }
+    public void start() {}
 
     public Map<String, Boolean> getGamerules(String world) {
         Map<String, Boolean> result = new HashMap<>();

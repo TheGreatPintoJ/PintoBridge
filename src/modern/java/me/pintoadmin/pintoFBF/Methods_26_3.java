@@ -1,4 +1,3 @@
 package me.pintoadmin.pintoFBF;
 
-public class Methods_26_3 {
-}
+public class Methods_26_3 {}

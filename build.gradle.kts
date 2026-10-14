@@ -38,7 +38,7 @@ java {
 
 spotless {
     java {
-        googleJavaFormat("1.22.0").aosp()
+        googleJavaFormat("1.28.0").aosp()
         target(
             "src/main/java/**/*.java",
             "src/legacy/java/**/*.java",
