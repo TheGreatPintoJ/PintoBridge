@@ -1,5 +1,7 @@
 package me.pintoadmin.pintoBridge;
 
+import static org.bukkit.Bukkit.getServer;
+
 import java.util.*;
 import org.bukkit.*;
 import org.bukkit.configuration.file.*;
@@ -15,6 +17,7 @@ public class GameListeners implements Listener {
 
     public GameListeners(PintoBridge pintoBridge) {
         this.pintoBridge = pintoBridge;
+        getServer().getPluginManager().registerEvents(this, pintoBridge);
     }
 
     @EventHandler
@@ -76,13 +79,15 @@ public class GameListeners implements Listener {
 
     @EventHandler
     public void onPlayerJoinEvent(PlayerJoinEvent event) {
+        pintoBridge.debug("Player joined: " + event.getPlayer().getName());
         Player player = event.getPlayer();
         BridgeGame game = pintoBridge.getGame(player.getWorld().getName());
         if (game != null) {
+            pintoBridge.debug("Player joined game: " + player.getName());
             event.setJoinMessage(null);
-            List<String> teams = game.getTeams();
             game.join(player);
-        }
+            pintoBridge.debug("finished join logic: " + player.getName());
+        } else pintoBridge.debug("Game is null: " + player.getWorld().getName());
     }
 
     @EventHandler

@@ -26,12 +26,12 @@ public class BridgeGame_26_3 extends BridgeGame {
     private World world;
     private boolean playing = false;
     private boolean ended = false;
-    private List<Map<?, ?>> teamsMaps;
-    private List<Team> teams;
+    private List<Map<?, ?>> teamsMaps = new ArrayList<>();
+    private List<Team> teams = new ArrayList<>();
     private Scoreboard scoreboard;
     private boolean enabled;
-    private List<ItemStack> startingItems;
-    private List<Material> breakables;
+    private List<ItemStack> startingItems = new ArrayList<>();
+    private List<Material> breakables = new ArrayList<>();
     private Vector facingLocation;
     private Vector endLocation;
     private String endWorldName;
@@ -41,7 +41,6 @@ public class BridgeGame_26_3 extends BridgeGame {
     private Map<String, Vector> teamSpawns = new HashMap<>();
     private Map<String, Vector[]> teamPortals = new HashMap<>();
     private Map<String, Vector[]> teamCages = new HashMap<>();
-    private Set<UUID> spectators;
     private static final int MAX_BLOCK_CHANGES = 10000; // Prevent unbounded growth
     private final Map<String, Boolean> oldGamerules = new HashMap<>();
     private final Map<UUID, ItemStack[]> oldInventories = new HashMap<>();
@@ -59,13 +58,14 @@ public class BridgeGame_26_3 extends BridgeGame {
         this.config = pintoBridge.getConfig();
         this.gameCfg = config.getConfigurationSection(name);
         this.name = name;
+
+        init();
     }
 
     // Game functions
+    @Override
     public void init() {
-        playing = false;
         teamsMaps = gameCfg.getMapList("teams");
-        teams = new ArrayList<>();
         scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         enabled = gameCfg.getBoolean("enabled");
         List<String> startingItemsStr = gameCfg.getStringList("startingitems");
@@ -90,11 +90,6 @@ public class BridgeGame_26_3 extends BridgeGame {
         boardIP = boardSection.getString("ip", "");
         boardTitleColor = boardSection.getString("titlecolor", "AQUA");
         boardIPColor = boardSection.getString("ipcolor", "YELLOW");
-
-        startingItems = new ArrayList<>();
-        breakables = new ArrayList<>();
-        spectators = new LinkedHashSet<>();
-        teamSpawns = new HashMap<>();
 
         if (teamsMaps != null) {
             for (Map<?, ?> map : teamsMaps) {
@@ -225,6 +220,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         }
     }
 
+    @Override
     public void start() {
         playerStates.clear();
 
@@ -357,9 +353,12 @@ public class BridgeGame_26_3 extends BridgeGame {
         }
     }
 
+    @Override
     public void end(boolean forceEnd) {}
 
+    @Override
     public void join(Player player) {
+        pintoBridge.debug("Player joined the game: " + player.getName());
         boolean rejoining = false;
         // Remove from previous teams and clear tags/inventory if not in a game
         if (world == null) {
@@ -472,6 +471,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         }
     }
 
+    @Override
     public void leave(Player player, World toWorld) {
         UUID playerId = player.getUniqueId();
         player.getInventory().clear();
@@ -521,10 +521,10 @@ public class BridgeGame_26_3 extends BridgeGame {
             restoreInventory(player);
         }
 
-        spectators.remove(playerId);
         playerStates.remove(playerId);
     }
 
+    @Override
     public void score(Player player) {}
 
     @Override
@@ -548,6 +548,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         }
     }
 
+    @Override
     public void giveItems(Player player, String teamStr) {
         int counter = 0;
         for (ItemStack item : startingItems) {
@@ -591,6 +592,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         // TODO: fill out
     }
 
+    @Override
     public void updateScoreboard() {
         List<String> teams = getTeams();
         Objective sidebar = scoreboard.getObjective("sidebar");
@@ -689,6 +691,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         return new Vector(x, y, z);
     }
 
+    @Override
     public Location getFacingLocation() {
         if (world == null || facingLocation == null) return null;
         return facingLocation.toLocation(world);
@@ -707,6 +710,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         return new Vector(x, yVal, z);
     }
 
+    @Override
     public int getDeathHeight() {
         return deathHeight;
     }
@@ -716,6 +720,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         return canDrop;
     }
 
+    @Override
     public Scoreboard getScoreboard() {
         return scoreboard;
     }
@@ -730,6 +735,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         return breakables;
     }
 
+    @Override
     public List<String> getTeams() {
         List<String> finalList = new ArrayList<>();
         teamsMaps.forEach(
@@ -748,15 +754,21 @@ public class BridgeGame_26_3 extends BridgeGame {
         return List.of(); // TODO: fill out
     }
 
+    @Override
     public Vector getSpawnLoc(String team) {
         return teamSpawns.get(team.toLowerCase());
     }
 
     @Override
     public List<Player> getSpectators() {
-        return spectators.stream().map(Bukkit::getPlayer).toList();
+        List<UUID> uuids = playerStates.keySet().stream().toList();
+        return uuids.stream()
+                .filter(u -> !playerStates.get(u).contains(SPECTATING))
+                .map(Bukkit::getPlayer)
+                .toList();
     }
 
+    @Override
     public boolean isPlaying() {
         return playing;
     }

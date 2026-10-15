@@ -58,8 +58,10 @@ public final class PintoBridge extends JavaPlugin {
         configLoader.start();
 
         // Initialize Game objects for each game/world
-        for (String gameName : configLoader.getEnabledGames())
+        for (String gameName : configLoader.getEnabledGames()) {
+            getLogger().warning("Enabled games: " + configLoader.getEnabledGames());
             games.put(gameName, methods.createGame(this, gameName));
+        }
 
         // Listeners
         gameListeners = new GameListeners(this);

@@ -1,5 +1,7 @@
 package me.pintoadmin.pintoBridge;
 
+import static org.bukkit.Bukkit.getServer;
+
 import java.util.*;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -11,6 +13,7 @@ public class WorldChangeListener implements Listener {
 
     public WorldChangeListener(PintoBridge pintoBridge) {
         this.pintoBridge = pintoBridge;
+        getServer().getPluginManager().registerEvents(this, pintoBridge);
     }
 
     @EventHandler

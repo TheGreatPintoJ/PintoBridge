@@ -1,5 +1,7 @@
 package me.pintoadmin.pintoBridge;
 
+import static org.bukkit.Bukkit.getServer;
+
 import java.util.*;
 import org.bukkit.*;
 import org.bukkit.block.*;
@@ -14,6 +16,7 @@ public class BlockPlaceListener implements Listener {
 
     public BlockPlaceListener(PintoBridge pintoBridge) {
         this.pintoBridge = pintoBridge;
+        getServer().getPluginManager().registerEvents(this, pintoBridge);
     }
 
     @EventHandler
