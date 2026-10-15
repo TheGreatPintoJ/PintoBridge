@@ -33,7 +33,7 @@ public abstract class BridgeGame {
 
     public abstract void join(Player player);
 
-    public abstract void leave(Player player);
+    public abstract void leave(Player player, World toWorld);
 
     public abstract void score(Player player);
 

@@ -4,6 +4,7 @@ import static me.pintoadmin.pintoBridge.BridgeGame.PlayerState.*;
 
 import java.util.*;
 import org.bukkit.*;
+import org.bukkit.attribute.*;
 import org.bukkit.block.*;
 import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
@@ -358,9 +359,171 @@ public class BridgeGame_26_3 extends BridgeGame {
 
     public void end(boolean forceEnd) {}
 
-    public void join(Player player) {}
+    public void join(Player player) {
+        boolean rejoining = false;
+        // Remove from previous teams and clear tags/inventory if not in a game
+        if (world == null) {
+            world = Bukkit.getWorld(name);
+            if (world == null) {
+                pintoBridge.getLogger().severe("World is null - tried %s".formatted(name));
+            }
+        }
 
-    public void leave(Player player) {}
+        player.setScoreboard(scoreboard);
+
+        // Rejoining check
+        if (playing) {
+            // if player in leftplayers then spawnplayer, add to playingplayers, remove from
+            // leftplayers
+            if (playerStates
+                    .getOrDefault(player.getUniqueId(), new ArrayList<>())
+                    .contains(BridgeGame.PlayerState.LEFT)) {
+                rejoining = true;
+                List<PlayerState> state =
+                        playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>());
+                state.add(PLAYING);
+                state.remove(LEFT);
+                playerStates.put(player.getUniqueId(), state);
+            } else {
+                setPlayerToSpectate(player);
+                return;
+            }
+        }
+
+        oldInventories.put(player.getUniqueId(), player.getInventory().getContents());
+        player.getInventory().clear();
+
+        List<String> teams = getTeams();
+
+        List<World> worlds = Bukkit.getWorlds();
+        for (World world : worlds) {
+            if (world != Bukkit.getWorld(name)) {
+                List<Player> players = world.getPlayers();
+                for (Player thisPlayer : players) {
+                    player.hidePlayer(pintoBridge, thisPlayer);
+                    thisPlayer.hidePlayer(pintoBridge, player);
+                }
+            }
+        }
+
+        World playerWorld = player.getWorld();
+        for (Player thisPlayer : playerWorld.getPlayers()) {
+            player.showPlayer(pintoBridge, thisPlayer);
+            thisPlayer.showPlayer(pintoBridge, player);
+        }
+
+        if (!teams.isEmpty()) {
+            // Move join message logic here
+            for (Player oldPlayer : player.getWorld().getPlayers()) {
+                if (!rejoining)
+                    oldPlayer.sendMessage(
+                            player.getName()
+                                    + ChatColor.YELLOW
+                                    + " has joined the game "
+                                    + ChatColor.AQUA
+                                    + "(%s/%s)"
+                                            .formatted(
+                                                    player.getWorld().getPlayers().size(),
+                                                    teams.size() * playersPerTeam));
+                else oldPlayer.sendMessage(player.getName() + ChatColor.YELLOW + " has rejoined");
+            }
+            if (!rejoining) {
+                List<PlayerState> state =
+                        playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>());
+                state.addAll(List.of(NOPLACE, NOBREAK));
+                playerStates.put(player.getUniqueId(), state);
+            }
+            player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+        } else pintoBridge.debug("Teams is empty");
+
+        if (world.getPlayers().size() >= teams.size() * playersPerTeam && !rejoining) {
+            // All teams are full, start game
+            runningTasks.add(
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            start();
+                        }
+                    }.runTaskLater(pintoBridge, 5L));
+        } else if (rejoining) {
+            // Start this player
+            Team rejoiningTeam = scoreboard.getEntryTeam(player.getName());
+            String teamStr = rejoiningTeam.getName();
+            Vector spawn = getSpawnLoc(teamStr);
+            Location tpLocation = spawn.toLocation(world);
+            tpLocation.setDirection(facingLocation);
+            player.teleport(tpLocation);
+
+            pintoBridge
+                    .getLogger()
+                    .info(
+                            "%s is now on team %s"
+                                    .formatted(player.getName(), rejoiningTeam.getName()));
+
+            giveItems(player, teamStr);
+            player.setFoodLevel(20);
+            player.setSaturation(5);
+            player.setSaturatedRegenRate(30);
+            player.setGameMode(GameMode.SURVIVAL);
+
+            if (!getScoreboard().getObjective("health").getScore(player.getName()).isScoreSet()) {
+                player.damage(0.000001);
+            }
+        }
+    }
+
+    public void leave(Player player, World toWorld) {
+        UUID playerId = player.getUniqueId();
+        player.getInventory().clear();
+        // Remove from previous teams and tags, clear inventory, reset health
+        player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+
+        player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getValue());
+
+        // Show all players in the new world to the player, and vice versa
+        for (Player other : toWorld.getPlayers()) {
+            player.showPlayer(pintoBridge, other);
+            other.showPlayer(pintoBridge, player);
+        }
+
+        // Leave game messages
+        for (Player oldPlayer : world.getPlayers()) {
+            if (ended) continue;
+            if (!playing) {
+                oldPlayer.sendMessage(
+                        player.getName()
+                                + ChatColor.YELLOW
+                                + " has left the game "
+                                + ChatColor.AQUA
+                                + String.format(
+                                        "(%s/%s)", world.getPlayers().size(), teams.size()));
+            } else oldPlayer.sendMessage(player.getName() + ChatColor.YELLOW + " has left");
+        }
+
+        if (playing
+                && playerStates
+                        .getOrDefault(player.getUniqueId(), new ArrayList<>())
+                        .contains(BridgeGame.PlayerState.PLAYING)) {
+            //            boolean gameOver = false;
+            //            List<Team> livingTeams = getLivingTeams(); TODO: replace with game over
+            // (forfeited) logic
+            //            if (livingTeams.size() == 1) {
+            //                gameOver = true;
+            //            }
+            //            if (gameOver) {
+            //                end(false);
+            //            }
+            List<PlayerState> state =
+                    playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>());
+            state.add(LEFT);
+            playerStates.put(player.getUniqueId(), state);
+        } else {
+            restoreInventory(player);
+        }
+
+        spectators.remove(playerId);
+        playerStates.remove(playerId);
+    }
 
     public void score(Player player) {}
 
@@ -489,6 +652,13 @@ public class BridgeGame_26_3 extends BridgeGame {
     @Override
     public void addBlockChange(BlockState beforeBlockState) {
         blockChanges.add(beforeBlockState);
+    }
+
+    private void restoreInventory(Player player) {
+        ItemStack[] saved = oldInventories.remove(player.getUniqueId());
+        if (saved == null) return;
+        player.getInventory().clear();
+        player.getInventory().setContents(saved);
     }
 
     // Utilities

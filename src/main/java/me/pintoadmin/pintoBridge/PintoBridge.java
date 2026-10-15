@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.configuration.file.*;
+import org.bukkit.event.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PintoBridge extends JavaPlugin {
@@ -24,6 +25,12 @@ public final class PintoBridge extends JavaPlugin {
 
     public ConfigLoader configLoader;
     public Methods methods;
+
+    // Store listener references for cleanup
+    private GameListeners gameListeners;
+    private WorldChangeListener worldChangeListener;
+    private BlockBreakListener blockBreakListener;
+    private BlockPlaceListener blockPlaceListener;
 
     @Override
     public void onEnable() {
@@ -55,7 +62,10 @@ public final class PintoBridge extends JavaPlugin {
             games.put(gameName, methods.createGame(this, gameName));
 
         // Listeners
-
+        gameListeners = new GameListeners(this);
+        worldChangeListener = new WorldChangeListener(this);
+        blockBreakListener = new BlockBreakListener(this);
+        blockPlaceListener = new BlockPlaceListener(this);
     }
 
     @Override
@@ -67,6 +77,16 @@ public final class PintoBridge extends JavaPlugin {
                 game.end(true);
             }
         }
+        // Clear game map
+        games.clear();
+
+        // Unregister all event listeners to prevent memory leaks
+        HandlerList.unregisterAll(gameListeners);
+        HandlerList.unregisterAll(worldChangeListener);
+        HandlerList.unregisterAll(blockBreakListener);
+        HandlerList.unregisterAll(blockPlaceListener);
+
+        getLogger().info("PintoBridge plugin disabled and cleaned up");
     }
 
     public void debug(String... messages) {

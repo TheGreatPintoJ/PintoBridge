@@ -22,11 +22,8 @@ public class WorldChangeListener implements Listener {
         BridgeGame game = pintoBridge.getGame(toWorld.getName());
         BridgeGame fromGame = pintoBridge.getGame(fromWorld.getName());
 
-        List<String> teams = (game != null) ? game.getTeams() : Collections.emptyList();
-        List<String> fromTeams = (fromGame != null) ? fromGame.getTeams() : Collections.emptyList();
-
         if (fromGame != null && fromGame != game) {
-            fromGame.leave(player);
+            fromGame.leave(player, toWorld);
         }
         if (game == null) return;
         // Delegate to Game.join for all join logic

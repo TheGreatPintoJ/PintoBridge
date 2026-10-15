@@ -92,7 +92,7 @@ public class GameListeners implements Listener {
         BridgeGame game = pintoBridge.getGame(world.getName());
         if (game != null) {
             try {
-                game.leave(player);
+                game.leave(player, world);
             } catch (IllegalPluginAccessException ignored) {
             }
             pintoBridge.getLogger().warning("Player quit while in game: " + game.getName());
