@@ -95,4 +95,8 @@ public final class PintoBridge extends JavaPlugin {
             return false;
         }
     }
+
+    public static PintoBridge getInstance() {
+        return getPlugin(PintoBridge.class);
+    }
 }
