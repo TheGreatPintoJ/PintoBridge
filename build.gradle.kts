@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
     id("com.gradleup.shadow") version "9.6.1"
-    id("xyz.jpenilla.run-paper") version "3.1.0"
+//    id("xyz.jpenilla.run-paper") version "3.1.0"
     id("com.diffplug.spotless") version "6.25.0"
 }
 
@@ -53,7 +53,7 @@ spotless {
 
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
-    options.release.set(if (name == "compileModernJava") 17 else 8)
+    options.release.set(if (name == "compileModernJava") 25 else 8)
 }
 
 tasks {
@@ -78,9 +78,9 @@ tasks {
         dependsOn("spotlessApply")
     }
 
-    runServer {
-        minecraftVersion("26.3")
-    }
+//    runServer {
+//        minecraftVersion("26.3")
+//    }
 
     processResources {
         val props = mapOf("version" to version)

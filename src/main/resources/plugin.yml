@@ -1,7 +1,7 @@
 name: PintoBridge
 version: '${version}'
 main: me.pintoadmin.pintoBridge.PintoBridge
-api-version: '26.1'
+api-version: '26.3'
 authors: [ PintoJ ]
 softdepend:
   - Multiverse-Core
