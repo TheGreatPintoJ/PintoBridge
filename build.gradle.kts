@@ -62,6 +62,8 @@ tasks {
     }
 
     shadowJar {
+        from(sourceSets["legacy"].output)
+        from(sourceSets["modern"].output)
         // relocate("com.fasterxml.jackson", "me.pintoadmin.fabricmoddownloader.shaded.com.fasterxml.jackson")
         // relocate("org.yaml.snakeyaml", "me.pintoadmin.fabricmoddownloader.shaded.org.yaml.snakeyaml")
         archiveClassifier.set("")

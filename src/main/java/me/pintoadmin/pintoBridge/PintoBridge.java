@@ -10,8 +10,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class PintoBridge extends JavaPlugin {
     private final Map<String, BridgeGame> games = new HashMap<>(); // world to game instance
 
-    private static final String MODERN_METHODS = "me.pintoadmin.pintoFBF.Methods_26_3";
-    private static final String LEGACY_METHODS = "me.pintoadmin.pintoFBF.Methods_1_8";
+    private static final String MODERN_METHODS = "me.pintoadmin.pintoBridge.Methods_26_3";
+    private static final String LEGACY_METHODS = "me.pintoadmin.pintoBridge.Methods_1_8";
 
     /** BlockData arrived with the 1.13 flattening, which is exactly the line the two split on. */
     private static final String FLATTENING_MARKER = "org.bukkit.block.data.BlockData";
@@ -27,14 +27,15 @@ public final class PintoBridge extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        if (methods == null) methods = loadMethods();
         // Save default config
-        File configFile = new File(getDataFolder() + "/modern_config.yml");
+        File configFile = new File(getDataFolder() + "/config.yml");
         if (!configFile.exists()) {
             saveResource(CONFIG_NAME, false);
             try {
                 Files.move(
                         Paths.get(getDataFolder() + "/" + CONFIG_NAME),
-                        Paths.get(getDataFolder() + "/modern_config.yml"),
+                        Paths.get(getDataFolder() + "/config.yml"),
                         StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 getLogger().severe("Could not save configuration file: " + e.getMessage());
@@ -68,12 +69,20 @@ public final class PintoBridge extends JavaPlugin {
         }
     }
 
+    public void debug(String... messages) {
+        String finalString = "[DEBUG]";
+        for (String msg : messages) {
+            finalString += " " + msg;
+        }
+        getLogger().info(finalString);
+    }
+
     private Methods loadMethods() {
         boolean flattened = classExists(FLATTENING_MARKER);
         boolean modern = classExists(MODERN_MARKER);
         if (flattened && !modern) {
             throw new IllegalStateException(
-                    "PintoFBF supports 1.8.x and 1.20.5+; this server is in between.");
+                    "PintoBridge supports 1.8.x and 1.20.5+; this server is in between.");
         }
         String impl = modern ? MODERN_METHODS : LEGACY_METHODS;
         CONFIG_NAME = modern ? "modern_config.yml" : "legacy_config.yml";
@@ -83,7 +92,7 @@ public final class PintoBridge extends JavaPlugin {
             return loaded;
         } catch (Throwable t) {
             // Nothing works without this, so fail loudly here rather than with an NPE later.
-            throw new IllegalStateException("PintoFBF could not load " + impl, t);
+            throw new IllegalStateException("PintoBridge could not load " + impl, t);
         }
     }
 

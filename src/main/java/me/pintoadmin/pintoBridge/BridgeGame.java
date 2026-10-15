@@ -1,13 +1,25 @@
 package me.pintoadmin.pintoBridge;
 
 import java.util.*;
-
 import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
 
 public abstract class BridgeGame {
     public final LinkedList<BlockState> blockChanges = new LinkedList<>();
+
+    public enum PlayerState {
+        PLAYING,
+        SPECTATING,
+        DEAD,
+        LEFT,
+        NOMOVE,
+        NOBREAKRES,
+        NOBREAK,
+        NOPLACE
+    }
+
+    public final Map<UUID, List<PlayerState>> playerStates = new LinkedHashMap<>();
 
     public abstract void init();
 
@@ -18,6 +30,8 @@ public abstract class BridgeGame {
     public abstract void join(Player player);
 
     public abstract void leave(Player player);
+
+    public abstract void score(Player player);
 
     public abstract boolean isPlaying();
 

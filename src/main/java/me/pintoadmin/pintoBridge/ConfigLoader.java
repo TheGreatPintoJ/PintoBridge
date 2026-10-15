@@ -5,11 +5,11 @@ import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
 
 public class ConfigLoader {
-    private final PintoBridge pintoFBF;
+    private final PintoBridge pintoBridge;
     private final FileConfiguration config;
 
-    public ConfigLoader(PintoBridge pintoFBF, FileConfiguration config) {
-        this.pintoFBF = pintoFBF;
+    public ConfigLoader(PintoBridge pintoBridge, FileConfiguration config) {
+        this.pintoBridge = pintoBridge;
         this.config = config;
     }
 
@@ -58,6 +58,6 @@ public class ConfigLoader {
 
     public void set(String path, Object value) {
         config.set(path, value);
-        pintoFBF.saveConfig();
+        pintoBridge.saveConfig();
     }
 }

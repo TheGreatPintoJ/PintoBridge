@@ -26,6 +26,13 @@ bridge1: # world name - can be anything
         x2: 0.0
         y2: 0.0
         z2: 20.0
+      cage: # coords for team's starting cage
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
       spawnlocation: # coords for team's spawn
         x: 25.0
         y: 0.0
@@ -82,6 +89,13 @@ bridge2:
   teams:
     - color: red
       portal:
+        x1: 20.0
+        y1: 0.0
+        z1: 0.0
+        x2: 0.0
+        y2: 0.0
+        z2: 20.0
+      cage:
         x1: 20.0
         y1: 0.0
         z1: 0.0
