@@ -4,6 +4,10 @@ import java.util.*;
 import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.*;
+import org.bukkit.inventory.*;
+import org.bukkit.scoreboard.*;
+import org.bukkit.util.Vector;
 
 public abstract class BridgeGame {
     public final LinkedList<BlockState> blockChanges = new LinkedList<>();
@@ -13,7 +17,6 @@ public abstract class BridgeGame {
         SPECTATING,
         DEAD,
         LEFT,
-        NOMOVE,
         NOBREAKRES,
         NOBREAK,
         NOPLACE
@@ -21,6 +24,7 @@ public abstract class BridgeGame {
 
     public final Map<UUID, List<PlayerState>> playerStates = new LinkedHashMap<>();
 
+    // GAME METHODS
     public abstract void init();
 
     public abstract void start();
@@ -33,7 +37,46 @@ public abstract class BridgeGame {
 
     public abstract void score(Player player);
 
+    public abstract void onDeath(Player player, PlayerDeathEvent event);
+
+    public abstract void giveItems(Player player, String teamStr);
+
+    public abstract void giveItems(Team team);
+
+    public abstract void updateScoreboard();
+
+    public abstract void setPlayerToSpectate(Player player);
+
+    public abstract void addBlockChange(BlockState beforeBlockState);
+
+    // GETTERS
+    public abstract String getName();
+
     public abstract boolean isPlaying();
+
+    public abstract boolean isEnded();
+
+    public abstract List<String> getTeams();
+
+    public abstract List<Team> getBukkitTeams();
+
+    public abstract Scoreboard getScoreboard();
+
+    public abstract List<ItemStack> getStartingItems();
+
+    public abstract List<Material> getBreakables();
+
+    public abstract Location getFacingLocation();
+
+    public abstract Location getEndLocation();
+
+    public abstract int getDeathHeight();
+
+    public abstract boolean canDrop();
+
+    public abstract Vector getSpawnLoc(String team);
+
+    public abstract List<Player> getSpectators();
 
     private static final Map<String, ChatColor> TEAM_COLORS = new HashMap<>();
 

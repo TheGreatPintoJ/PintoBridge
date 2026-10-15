@@ -77,6 +77,10 @@ public final class PintoBridge extends JavaPlugin {
         getLogger().info(finalString);
     }
 
+    public BridgeGame getGame(String name) {
+        return games.get(name);
+    }
+
     private Methods loadMethods() {
         boolean flattened = classExists(FLATTENING_MARKER);
         boolean modern = classExists(MODERN_MARKER);

@@ -9,6 +9,7 @@ import org.bukkit.configuration.*;
 import org.bukkit.configuration.file.*;
 import org.bukkit.enchantments.*;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.scheduler.*;
@@ -291,7 +292,7 @@ public class BridgeGame_26_3 extends BridgeGame {
             for (Player thisPlayer : teamPlayerList) {
                 final UUID playerId = thisPlayer.getUniqueId();
                 List<PlayerState> state = playerStates.getOrDefault(playerId, new ArrayList<>());
-                state.addAll(List.of(PLAYING, NOMOVE, NOBREAKRES));
+                state.addAll(List.of(PLAYING, NOBREAKRES));
                 playerStates.put(playerId, state);
 
                 Location tpLocation = spawn.toLocation(world);
@@ -345,7 +346,7 @@ public class BridgeGame_26_3 extends BridgeGame {
                                             thisPlayer, Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 1f);
                                     List<PlayerState> state =
                                             playerStates.getOrDefault(playerId, new ArrayList<>());
-                                    state.removeAll(List.of(NOPLACE, NOBREAK, NOMOVE));
+                                    state.removeAll(List.of(NOPLACE, NOBREAK));
                                     playerStates.put(playerId, state);
                                     this.cancel();
                                 }
@@ -362,6 +363,14 @@ public class BridgeGame_26_3 extends BridgeGame {
     public void leave(Player player) {}
 
     public void score(Player player) {}
+
+    @Override
+    public void onDeath(Player player, PlayerDeathEvent event) {}
+
+    @Override
+    public String getName() {
+        return name;
+    }
 
     private void undoBlockChanges() {
         LinkedList<BlockState> changes = new LinkedList<>();
@@ -412,6 +421,11 @@ public class BridgeGame_26_3 extends BridgeGame {
             }
             counter++;
         }
+    }
+
+    @Override
+    public void giveItems(Team team) {
+        // TODO: fill out
     }
 
     public void updateScoreboard() {
@@ -467,6 +481,16 @@ public class BridgeGame_26_3 extends BridgeGame {
         }
     }
 
+    @Override
+    public void setPlayerToSpectate(Player player) {
+        // TODO: fill out
+    }
+
+    @Override
+    public void addBlockChange(BlockState beforeBlockState) {
+        blockChanges.add(beforeBlockState);
+    }
+
     // Utilities
     private ItemStack enchantItem(ItemStack input, Map<Enchantment, Integer> enchantments) {
         ItemMeta meta = input.getItemMeta();
@@ -500,6 +524,11 @@ public class BridgeGame_26_3 extends BridgeGame {
         return facingLocation.toLocation(world);
     }
 
+    @Override
+    public Location getEndLocation() {
+        return new Location(world, endLocation.getX(), endLocation.getY(), endLocation.getZ());
+    }
+
     private Vector getFacing(Double yVal) {
         ConfigurationSection facingLocation = gameCfg.getConfigurationSection("facinglocation");
         if (facingLocation == null) return null;
@@ -508,8 +537,27 @@ public class BridgeGame_26_3 extends BridgeGame {
         return new Vector(x, yVal, z);
     }
 
+    public int getDeathHeight() {
+        return deathHeight;
+    }
+
+    @Override
+    public boolean canDrop() {
+        return canDrop;
+    }
+
     public Scoreboard getScoreboard() {
         return scoreboard;
+    }
+
+    @Override
+    public List<ItemStack> getStartingItems() {
+        return startingItems;
+    }
+
+    @Override
+    public List<Material> getBreakables() {
+        return breakables;
     }
 
     public List<String> getTeams() {
@@ -525,12 +573,27 @@ public class BridgeGame_26_3 extends BridgeGame {
         return finalList;
     }
 
+    @Override
+    public List<Team> getBukkitTeams() {
+        return List.of(); // TODO: fill out
+    }
+
     public Vector getSpawnLoc(String team) {
         return teamSpawns.get(team.toLowerCase());
     }
 
+    @Override
+    public List<Player> getSpectators() {
+        return spectators.stream().map(Bukkit::getPlayer).toList();
+    }
+
     public boolean isPlaying() {
-        return false;
+        return playing;
+    }
+
+    @Override
+    public boolean isEnded() {
+        return ended;
     }
 
     // Misc

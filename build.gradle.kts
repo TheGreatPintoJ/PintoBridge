@@ -51,6 +51,11 @@ spotless {
     }
 }
 
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(if (name == "compileModernJava") 17 else 8)
+}
+
 tasks {
     jar {
         from(sourceSets["legacy"].output)
