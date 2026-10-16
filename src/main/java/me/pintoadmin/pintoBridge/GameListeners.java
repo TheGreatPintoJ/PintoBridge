@@ -52,7 +52,7 @@ public class GameListeners implements Listener {
             BridgeGame game = pintoBridge.getGame(world.getName());
             if (game != null) {
                 event.setCancelled(true);
-                player.setSaturation(5);
+                player.setSaturation(1);
                 player.setFoodLevel(20);
             }
         }

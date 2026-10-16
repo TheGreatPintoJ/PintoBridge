@@ -205,10 +205,9 @@ public class BridgeGame_26_3 extends BridgeGame {
         if (!breakablesStr.isEmpty()) {
             for (String matStr : breakablesStr) {
                 if (matStr.equalsIgnoreCase("terracottas")) {
-                    // Add all wool colors
                     for (DyeColor dye : DyeColor.values()) {
-                        Material woolMat = Material.getMaterial(dye.name() + "_TERRACOTTA");
-                        if (woolMat != null) breakables.add(woolMat);
+                        Material mat = Material.getMaterial(dye.name() + "_TERRACOTTA");
+                        if (mat != null) breakables.add(mat);
                     }
                 } else {
                     Material mat = Material.matchMaterial(matStr);
@@ -525,10 +524,64 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
-    public void score(Player player) {}
+    public void score(Player player) {
+        String playerTeam = teams.stream().filter(t -> t.getEntries().contains(player.getName())).toList().getFirst().getColor().toString();
+        int newScore = teamWins.get(playerTeam)+1;
+        teamWins.put(playerTeam, newScore);
+
+        // Trigger round end, next begin
+    }
 
     @Override
-    public void onDeath(Player player, PlayerDeathEvent event) {}
+    public void onDeath(Player player, PlayerDeathEvent event) {
+        World world = player.getWorld();
+
+        if (!playing) {
+            player.setRespawnLocation(player.getWorld().getSpawnLocation());
+            event.setDeathMessage(null);
+            player.spigot().respawn();
+            return;
+        }
+
+        String deathMessage = event.getDeathMessage();
+        event.setDeathMessage(null);
+        for (Player thisPlayer : world.getPlayers()) {
+            thisPlayer.sendMessage(deathMessage);
+        }
+        event.getDrops().clear();
+
+        Team playerTeam = scoreboard.getEntryTeam(player.getName());
+        if (playerTeam == null) {
+            return;
+        }
+        String teamColor = playerTeam.getName();
+        Vector teamSpawn = getSpawnLoc(teamColor);
+        if (teamSpawn == null) {
+            pintoBridge.getLogger().warning("TeamSpawn is null");
+            return;
+        }
+        Vector teamFacing =
+                getFacingLocation() != null
+                        ? getFacingLocation().toVector()
+                        : new Vector(0, teamSpawn.getY(), 0);
+
+        event.getDrops().clear();
+        event.setDroppedExp(0);
+        if (playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>()).contains(PLAYING)) {
+            event.setDeathMessage(null);
+            return;
+        }
+
+        Location tpLoc = teamSpawn.toLocation(world);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.spigot().respawn();
+                player.teleport(tpLoc);
+                giveItems(player, teamColor);
+            }
+        }.runTask(pintoBridge);
+    }
 
     @Override
     public String getName() {
@@ -617,7 +670,7 @@ public class BridgeGame_26_3 extends BridgeGame {
             String winsStr = "";
             int wins = teamWins.get(teamStr);
             for (int i = 0; i < 5; i++) {
-                if (i <= wins) winsStr += chatcolor + "⬤";
+                if (i < wins) winsStr += chatcolor + "⬤";
                 else winsStr += ChatColor.RESET + "⬤";
             }
 
