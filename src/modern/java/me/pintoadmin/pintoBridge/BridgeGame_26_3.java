@@ -69,8 +69,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         enabled = gameCfg.getBoolean("enabled");
         List<String> startingItemsStr = gameCfg.getStringList("startingitems");
-        List<String> breakablesStr = gameCfg.getStringList("startingitems");
-        facingLocation = getFacing(5d);
+        List<String> breakablesStr = gameCfg.getStringList("canbreak");
         deathHeight = gameCfg.getInt("deathheight", -64);
         canDrop = gameCfg.getBoolean("candropitems", false);
         playersPerTeam = gameCfg.getInt("playersperteam", 1);
@@ -278,10 +277,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         for (String teamStr : teams) {
             Vector spawn = getSpawnLoc(teamStr);
             if (spawn == null) continue;
-            Vector facing =
-                    (getFacingLocation() != null)
-                            ? getFacingLocation().toVector().clone()
-                            : new Vector(0, spawn.getY(), 0);
+            Vector facing = getFacing(spawn, spawn.getY());
             Vector direction = facing.clone().subtract(spawn).setY(0).normalize();
             List<Player> teamPlayerList = teamPlayers.get(teamStr);
             if (teamPlayerList == null) continue;
@@ -357,7 +353,6 @@ public class BridgeGame_26_3 extends BridgeGame {
 
     @Override
     public void join(Player player) {
-        pintoBridge.debug("Player joined the game: " + player.getName());
         boolean rejoining = false;
         // Remove from previous teams and clear tags/inventory if not in a game
         if (world == null) {
@@ -449,7 +444,7 @@ public class BridgeGame_26_3 extends BridgeGame {
             String teamStr = rejoiningTeam.getName();
             Vector spawn = getSpawnLoc(teamStr);
             Location tpLocation = spawn.toLocation(world);
-            tpLocation.setDirection(facingLocation);
+            tpLocation.setDirection(getFacing(spawn, spawn.getY()));
             player.teleport(tpLocation);
 
             pintoBridge
@@ -525,8 +520,14 @@ public class BridgeGame_26_3 extends BridgeGame {
 
     @Override
     public void score(Player player) {
-        String playerTeam = teams.stream().filter(t -> t.getEntries().contains(player.getName())).toList().getFirst().getColor().toString();
-        int newScore = teamWins.get(playerTeam)+1;
+        String playerTeam =
+                teams.stream()
+                        .filter(t -> t.getEntries().contains(player.getName()))
+                        .toList()
+                        .getFirst()
+                        .getColor()
+                        .toString();
+        int newScore = teamWins.get(playerTeam) + 1;
         teamWins.put(playerTeam, newScore);
 
         // Trigger round end, next begin
@@ -552,27 +553,26 @@ public class BridgeGame_26_3 extends BridgeGame {
 
         Team playerTeam = scoreboard.getEntryTeam(player.getName());
         if (playerTeam == null) {
+            pintoBridge.debug("Player not on a team: " + player.getName());
             return;
         }
         String teamColor = playerTeam.getName();
         Vector teamSpawn = getSpawnLoc(teamColor);
         if (teamSpawn == null) {
-            pintoBridge.getLogger().warning("TeamSpawn is null");
+            pintoBridge.getLogger().warning("Team spawn is null: " + teamColor);
             return;
         }
-        Vector teamFacing =
-                getFacingLocation() != null
-                        ? getFacingLocation().toVector()
-                        : new Vector(0, teamSpawn.getY(), 0);
+        Vector teamFacing = getFacing(teamSpawn, teamSpawn.getY());
 
         event.getDrops().clear();
         event.setDroppedExp(0);
-        if (playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>()).contains(PLAYING)) {
+        if (!playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>()).contains(PLAYING)) {
             event.setDeathMessage(null);
             return;
         }
 
         Location tpLoc = teamSpawn.toLocation(world);
+        tpLoc.setDirection(teamFacing);
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -745,22 +745,20 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
-    public Location getFacingLocation() {
-        if (world == null || facingLocation == null) return null;
-        return facingLocation.toLocation(world);
-    }
-
-    @Override
     public Location getEndLocation() {
         return new Location(world, endLocation.getX(), endLocation.getY(), endLocation.getZ());
     }
 
-    private Vector getFacing(Double yVal) {
+    private Vector getFacing(Location currentLoc, Double yVal) {
+        return getFacing(currentLoc.toVector(), yVal);
+    }
+
+    private Vector getFacing(Vector currentLoc, Double yVal) {
         ConfigurationSection facingLocation = gameCfg.getConfigurationSection("facinglocation");
         if (facingLocation == null) return null;
         double x = facingLocation.getDouble("x");
         double z = facingLocation.getDouble("z");
-        return new Vector(x, yVal, z);
+        return new Vector(x, yVal, z).subtract(currentLoc).normalize();
     }
 
     @Override

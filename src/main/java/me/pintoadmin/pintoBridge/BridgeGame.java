@@ -66,8 +66,6 @@ public abstract class BridgeGame {
 
     public abstract List<Material> getBreakables();
 
-    public abstract Location getFacingLocation();
-
     public abstract Location getEndLocation();
 
     public abstract int getDeathHeight();
