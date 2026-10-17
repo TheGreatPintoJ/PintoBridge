@@ -15,7 +15,6 @@ import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.scheduler.*;
 import org.bukkit.scoreboard.*;
-import org.bukkit.util.*;
 import org.bukkit.util.Vector;
 
 public class BridgeGame_26_3 extends BridgeGame {
@@ -349,7 +348,140 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
-    public void end(boolean forceEnd) {}
+    public void end(boolean forceEnd) {
+        pintoBridge.getLogger().info("Ended game: %s".formatted(world.getName()));
+        playing = false;
+        // Remove all item entities
+        List<Entity> entities = world.getEntities();
+        for (Entity entity : entities) {
+            if (entity.getType() == EntityType.ITEM) {
+                entity.remove();
+            }
+        }
+        // Find living teams. The game's scoreboard only ever holds this game's teams.
+        List<Team> gameTeams = new ArrayList<>(scoreboard.getTeams());
+        List<Team> existingTeams = getExistingTeams();
+        // Remove duplicates
+        Set<Team> existingTeamsSet = new HashSet<>(existingTeams);
+        Team winningTeam = getWinningTeam();
+
+        // Losing teams: show GAME OVER, play sound, remove from team, remove tag
+        for (Team team : gameTeams) {
+            if (existingTeamsSet.contains(team) && team != winningTeam) {
+                for (String entry : team.getEntries()) {
+                    Player thisPlayer = Bukkit.getPlayerExact(entry);
+                    if (thisPlayer != null) {
+                        if (!playerStates.get(thisPlayer.getUniqueId()).contains(LEFT)) {
+                            thisPlayer.sendTitle(ChatColor.RED + "GAME OVER", "", 0, 60, 0);
+                            thisPlayer.playSound(thisPlayer, Sound.ITEM_SHIELD_BREAK, 3f, 1f);
+                        } else {
+                            List<PlayerState> states = playerStates.get(thisPlayer.getUniqueId());
+                            states.remove(LEFT);
+                            playerStates.put(thisPlayer.getUniqueId(), states);
+                        }
+                        // playingPlayers.remove(thisPlayer);
+                        // Clear title after a short delay to ensure it shows
+                        if (!forceEnd)
+                            runningTasks.add(
+                                    new BukkitRunnable() {
+                                        @Override
+                                        public void run() {
+                                            thisPlayer.sendTitle("", "", 0, 1, 0);
+                                        }
+                                    }.runTaskLater(pintoBridge, 65L));
+                    } else pintoBridge.getLogger().warning("Loser is null");
+                }
+            }
+        }
+        // Winning teams: show VICTORY, play sound, remove from team, remove tag
+        for (String entry : winningTeam.getEntries()) {
+            Player thisPlayer = Bukkit.getPlayerExact(entry);
+            if (thisPlayer != null) {
+                if (!playerStates.get(thisPlayer.getUniqueId()).contains(LEFT)) {
+                    thisPlayer.sendTitle(ChatColor.GOLD + "VICTORY", "", 0, 60, 0);
+                    thisPlayer.playSound(thisPlayer, Sound.ITEM_GOAT_HORN_SOUND_1, 3f, 1f);
+                } else {
+                    List<PlayerState> states = playerStates.get(thisPlayer.getUniqueId());
+                    states.remove(LEFT);
+                    playerStates.put(thisPlayer.getUniqueId(), states);
+                }
+                // playingPlayers.remove(thisPlayer);
+                if (!forceEnd)
+                    runningTasks.add(
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    thisPlayer.sendTitle("", "", 0, 1, 0);
+                                }
+                            }.runTaskLater(pintoBridge, 65L));
+            } else pintoBridge.getLogger().warning("Winner is null");
+        }
+
+        // All players: remove tags, clear inventory, reset health, remove from team, set gamemode,
+        // clear title
+        for (Player player : world.getPlayers()) {
+            // playingPlayers.remove(player);
+            AttributeInstance attr = player.getAttribute(Attribute.MAX_HEALTH);
+            if (attr != null) {
+                player.setHealth(attr.getValue());
+            }
+        }
+        // Empty Teams
+        for (Team team : teams) {
+            team.getEntries().forEach(team::removeEntry);
+        }
+
+        BukkitRunnable cleanupTask =
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        for (Player thisPlayer : world.getPlayers()) {
+                            thisPlayer.getInventory().clear();
+                            Location endLocation = getEndLocation();
+                            thisPlayer.teleport(endLocation);
+                            thisPlayer.setHealth(
+                                    thisPlayer.getAttribute(Attribute.MAX_HEALTH).getValue());
+                            List<PlayerState> states = playerStates.get(thisPlayer.getUniqueId());
+                            states.remove(SPECTATING);
+                            playerStates.put(thisPlayer.getUniqueId(), states);
+                            thisPlayer.setGameMode(GameMode.SURVIVAL);
+
+                            restoreInventory(thisPlayer);
+                        }
+                        undoBlockChanges();
+                        blockChanges.clear();
+
+                        // Clear all playerlists
+                        playerStates.clear();
+                        oldInventories.clear();
+
+                        for (Entity entity : world.getEntities()) {
+                            if (entity.getType() == EntityType.ITEM
+                                    || entity.getType() == EntityType.TNT
+                                    || entity.getType() == EntityType.FIREBALL) entity.remove();
+                        }
+
+                        ended = false;
+                    }
+                };
+
+        ended = true;
+        if (forceEnd) {
+            cleanupTask.run();
+            for (BukkitTask task : runningTasks) {
+                if (task != null) task.cancel();
+            }
+            runningTasks.clear();
+        } else runningTasks.add(cleanupTask.runTaskLater(pintoBridge, 40L));
+
+        for (Map.Entry<String, Boolean> entry : oldGamerules.entrySet()) {
+            @SuppressWarnings("unchecked")
+            GameRule<Boolean> rule = (GameRule<Boolean>) GameRule.getByName(entry.getKey());
+            if (rule != null) {
+                world.setGameRule(rule, entry.getValue());
+            }
+        }
+    }
 
     @Override
     public void join(Player player) {
@@ -368,9 +500,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         if (playing) {
             // if player in leftplayers then spawnplayer, add to playingplayers, remove from
             // leftplayers
-            if (playerStates
-                    .getOrDefault(player.getUniqueId(), new ArrayList<>())
-                    .contains(BridgeGame.PlayerState.LEFT)) {
+            if (playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>()).contains(LEFT)) {
                 rejoining = true;
                 List<PlayerState> state =
                         playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>());
@@ -494,28 +624,24 @@ public class BridgeGame_26_3 extends BridgeGame {
             } else oldPlayer.sendMessage(player.getName() + ChatColor.YELLOW + " has left");
         }
 
-        if (playing
-                && playerStates
-                        .getOrDefault(player.getUniqueId(), new ArrayList<>())
-                        .contains(BridgeGame.PlayerState.PLAYING)) {
-            //            boolean gameOver = false;
-            //            List<Team> livingTeams = getLivingTeams(); TODO: replace with game over
-            // (forfeited) logic
-            //            if (livingTeams.size() == 1) {
-            //                gameOver = true;
-            //            }
-            //            if (gameOver) {
-            //                end(false);
-            //            }
-            List<PlayerState> state =
-                    playerStates.getOrDefault(player.getUniqueId(), new ArrayList<>());
-            state.add(LEFT);
-            playerStates.put(player.getUniqueId(), state);
-        } else {
-            restoreInventory(player);
-        }
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (playing
+                        && playerStates
+                                .getOrDefault(playerId, new ArrayList<>())
+                                .contains(PLAYING)) {
+                    if (getExistingTeams().size() <= 1) end(false);
+                } else {
+                    restoreInventory(player);
+                }
 
-        playerStates.remove(playerId);
+                List<PlayerState> states = playerStates.getOrDefault(playerId, new ArrayList<>());
+                states.clear();
+                states.add(LEFT);
+                playerStates.put(playerId, states);
+            }
+        }.runTask(pintoBridge); // Run after the player moves worlds (so that getExistingTeams returns correctly)
     }
 
     @Override
@@ -642,7 +768,13 @@ public class BridgeGame_26_3 extends BridgeGame {
 
     @Override
     public void giveItems(Team team) {
-        // TODO: fill out
+        if (team == null) return;
+        for (String entry : team.getEntries()) {
+            Player player = Bukkit.getPlayerExact(entry);
+            if (player != null) {
+                giveItems(player, team.getName());
+            }
+        }
     }
 
     @Override
@@ -798,6 +930,30 @@ public class BridgeGame_26_3 extends BridgeGame {
                     }
                 });
         return finalList;
+    }
+
+    private List<Team> getExistingTeams() {
+        List<Team> livingTeams = new ArrayList<>();
+        for (Team team : scoreboard.getTeams()) {
+            for (String strPlayer : team.getEntries()) {
+                Player player = Bukkit.getPlayerExact(strPlayer);
+                if (player != null
+                        && playerStates
+                                .getOrDefault(player.getUniqueId(), new ArrayList<>())
+                                .contains(PLAYING)) {
+                    livingTeams.add(team);
+                }
+            }
+        }
+        return livingTeams;
+    }
+
+    private Team getWinningTeam() {
+        Map.Entry<String, Integer> topTeam = null;
+        for (Map.Entry<String, Integer> team : teamWins.entrySet()) {
+            if (topTeam == null || topTeam.getValue() < team.getValue()) topTeam = team;
+        }
+        return scoreboard.getTeam(topTeam.getKey());
     }
 
     @Override

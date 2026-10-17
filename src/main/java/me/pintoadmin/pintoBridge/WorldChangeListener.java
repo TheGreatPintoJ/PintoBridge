@@ -32,4 +32,14 @@ public class WorldChangeListener implements Listener {
         // Delegate to Game.join for all join logic
         game.join(player);
     }
+
+    @EventHandler
+    public void onPlayerEnterPortal(PlayerPortalEvent event) {
+        if (pintoBridge.getGame(event.getPlayer().getWorld().getName()) == null)
+            return; // Not a playing game, don't interfere
+        if (event.getCause() == PlayerTeleportEvent.TeleportCause.END_PORTAL) {
+            event.setCancelled(
+                    true); // temporary until scoring established. TODO: replace with scoring logic
+        }
+    }
 }

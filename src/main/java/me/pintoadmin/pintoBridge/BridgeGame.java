@@ -15,7 +15,6 @@ public abstract class BridgeGame {
     public enum PlayerState {
         PLAYING,
         SPECTATING,
-        DEAD,
         LEFT,
         NOBREAKRES,
         NOBREAK,
