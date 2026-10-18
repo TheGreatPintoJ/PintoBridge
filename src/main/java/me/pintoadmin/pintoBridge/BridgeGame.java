@@ -36,6 +36,8 @@ public abstract class BridgeGame {
 
     public abstract void score(Player player);
 
+    public abstract void entersPortal(Player player);
+
     public abstract void onDeath(Player player, PlayerDeathEvent event);
 
     public abstract void giveItems(Player player, String teamStr);

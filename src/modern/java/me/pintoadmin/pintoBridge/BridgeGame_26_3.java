@@ -47,6 +47,8 @@ public class BridgeGame_26_3 extends BridgeGame {
 
     private final Map<String, Integer> teamWins = new HashMap<>();
 
+    private final List<BlockState> cageBlocks = new LinkedList<>();
+
     private String boardTitle;
     private String boardIP;
     private String boardTitleColor;
@@ -655,12 +657,92 @@ public class BridgeGame_26_3 extends BridgeGame {
                         .filter(t -> t.getEntries().contains(player.getName()))
                         .toList()
                         .getFirst()
-                        .getColor()
-                        .toString();
-        int newScore = teamWins.get(playerTeam) + 1;
+                        .getName();
+        int newScore = teamWins.getOrDefault(playerTeam, 0) + 1;
         teamWins.put(playerTeam, newScore);
+        updateScoreboard();
 
         // Trigger round end, next begin
+        replaceCages();
+        List<String> teams = getTeams();
+        Map<String, List<Player>> teamPlayers = new HashMap<>();
+        for (String teamStr : teams) {
+            teamPlayers.put(teamStr, new ArrayList<>());
+        }
+        for (String teamStr : teams) {
+            Vector spawn = getSpawnLoc(teamStr);
+            if (spawn == null) continue;
+            Vector facing = getFacing(spawn, spawn.getY());
+            Vector direction = facing.clone().subtract(spawn).setY(0).normalize();
+            List<Player> teamPlayerList = teamPlayers.get(teamStr);
+            if (teamPlayerList == null) continue;
+            for (Player thisPlayer : teamPlayerList) {
+                final UUID playerId = thisPlayer.getUniqueId();
+                List<PlayerState> state = playerStates.getOrDefault(playerId, new ArrayList<>());
+                state.addAll(List.of(PLAYING, NOBREAKRES));
+                playerStates.put(playerId, state);
+
+                Location tpLocation = spawn.toLocation(world);
+                tpLocation.setDirection(direction);
+                thisPlayer.teleport(tpLocation);
+
+                Team team = scoreboard.getTeam(teamStr);
+                if (team != null) {
+                    team.addEntry(thisPlayer.getName());
+                    pintoBridge
+                            .getLogger()
+                            .info(
+                                    "%s is now on team %s"
+                                            .formatted(thisPlayer.getName(), team.getName()));
+                } else {
+                    pintoBridge.getLogger().warning("Could not find team with name: " + teamStr);
+                }
+
+                giveItems(thisPlayer, teamStr);
+                thisPlayer.setFoodLevel(20);
+                thisPlayer.setSaturation(5);
+                thisPlayer.setSaturatedRegenRate(30);
+                thisPlayer.setGameMode(GameMode.SURVIVAL);
+
+                if (!getScoreboard()
+                        .getObjective("health")
+                        .getScore(thisPlayer.getName())
+                        .isScoreSet()) {
+                    thisPlayer.damage(0.000001);
+                }
+
+                runningTasks.add(
+                        new BukkitRunnable() {
+                            int countdown = 3;
+
+                            @Override
+                            public void run() {
+                                if (countdown > 0) {
+                                    thisPlayer.sendTitle(
+                                            ChatColor.GOLD + String.valueOf(countdown),
+                                            "",
+                                            0,
+                                            20,
+                                            0);
+                                    thisPlayer.playSound(
+                                            thisPlayer, Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 0.5f);
+                                    countdown--;
+                                } else {
+                                    thisPlayer.sendTitle("", "", 0, 1, 0); // Clear title
+                                    thisPlayer.playSound(
+                                            thisPlayer, Sound.BLOCK_NOTE_BLOCK_CHIME, 0.5f, 1f);
+                                    List<PlayerState> state =
+                                            playerStates.getOrDefault(playerId, new ArrayList<>());
+                                    state.removeAll(List.of(NOPLACE, NOBREAK));
+                                    playerStates.put(playerId, state);
+                                    // Remove cage
+                                    removeCage(thisPlayer);
+                                    this.cancel();
+                                }
+                            }
+                        }.runTaskTimer(pintoBridge, 0L, 20L)); // 20L = 1 second
+            }
+        }
     }
 
     @Override
@@ -714,6 +796,29 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
+    public void entersPortal(Player player) {
+        Team team = getPlayerTeam(player);
+        if (team == null) {
+            pintoBridge.getLogger().severe("Could not find team for player: " + player.getName());
+            return;
+        }
+        Vector[] portalLocs = teamPortals.get(team.getName());
+        Vector minVec =
+                new Vector(
+                        Math.min(portalLocs[0].getX(), portalLocs[1].getX()),
+                        Math.min(portalLocs[0].getY(), portalLocs[1].getY()),
+                        Math.min(portalLocs[0].getZ(), portalLocs[1].getZ()));
+        Vector maxVec =
+                new Vector(
+                        Math.max(portalLocs[0].getX(), portalLocs[1].getX()),
+                        Math.max(portalLocs[0].getY(), portalLocs[1].getY()),
+                        Math.max(portalLocs[0].getZ(), portalLocs[1].getZ()));
+        if (!player.getLocation().toVector().isInAABB(minVec, maxVec)) { // Not the player's portal
+            score(player);
+        }
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -743,7 +848,7 @@ public class BridgeGame_26_3 extends BridgeGame {
                     for (int z = startZ; z <= endZ; z++) {
                         Block block = world.getBlockAt(x, y, z);
                         if (block.getType().isAir()) continue;
-                        blockChanges.add(block.getState());
+                        cageBlocks.add(block.getState());
                         block.setType(Material.AIR, false);
                     }
                 }
@@ -754,6 +859,12 @@ public class BridgeGame_26_3 extends BridgeGame {
                     .severe(
                             "Fix your config! Could not find cage for team: "
                                     + getPlayerTeam(thisPlayer));
+    }
+
+    private void replaceCages() {
+        for (BlockState state : cageBlocks) {
+            state.update(true);
+        }
     }
 
     private void undoBlockChanges() {
