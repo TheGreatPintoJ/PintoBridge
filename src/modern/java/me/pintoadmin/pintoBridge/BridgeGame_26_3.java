@@ -339,6 +339,8 @@ public class BridgeGame_26_3 extends BridgeGame {
                                             playerStates.getOrDefault(playerId, new ArrayList<>());
                                     state.removeAll(List.of(NOPLACE, NOBREAK));
                                     playerStates.put(playerId, state);
+                                    // Remove cage
+                                    removeCage(thisPlayer);
                                     this.cancel();
                                 }
                             }
@@ -641,7 +643,9 @@ public class BridgeGame_26_3 extends BridgeGame {
                 states.add(LEFT);
                 playerStates.put(playerId, states);
             }
-        }.runTask(pintoBridge); // Run after the player moves worlds (so that getExistingTeams returns correctly)
+        }.runTask(
+                pintoBridge); // Run after the player moves worlds (so that getExistingTeams returns
+        // correctly)
     }
 
     @Override
@@ -712,6 +716,44 @@ public class BridgeGame_26_3 extends BridgeGame {
     @Override
     public String getName() {
         return name;
+    }
+
+    private void removeCage(Player thisPlayer) {
+        Vector startCorner;
+        Vector endCorner;
+        try {
+            Team playerTeam = getPlayerTeam(thisPlayer);
+            startCorner = teamCages.get(playerTeam.getName())[0];
+            endCorner = teamCages.get(playerTeam.getName())[1];
+        } catch (NullPointerException e) {
+            pintoBridge.getLogger().severe("Could not find player's team: " + thisPlayer.getName());
+            throw new RuntimeException(e);
+        }
+        if (startCorner != null && endCorner != null) {
+            // Remove cage and add to blockStates
+            int startX = (int) Math.min(startCorner.getX(), endCorner.getX());
+            int endX = (int) Math.max(startCorner.getX(), endCorner.getX());
+            int startY = (int) Math.min(startCorner.getY(), endCorner.getY());
+            int endY = (int) Math.max(startCorner.getY(), endCorner.getY());
+            int startZ = (int) Math.min(startCorner.getZ(), endCorner.getZ());
+            int endZ = (int) Math.max(startCorner.getZ(), endCorner.getZ());
+
+            for (int x = startX; x <= endX; x++) {
+                for (int y = startY; y <= endY; y++) {
+                    for (int z = startZ; z <= endZ; z++) {
+                        Block block = world.getBlockAt(x, y, z);
+                        if (block.getType().isAir()) continue;
+                        blockChanges.add(block.getState());
+                        block.setType(Material.AIR, false);
+                    }
+                }
+            }
+        } else
+            pintoBridge
+                    .getLogger()
+                    .severe(
+                            "Fix your config! Could not find cage for team: "
+                                    + getPlayerTeam(thisPlayer));
     }
 
     private void undoBlockChanges() {
@@ -954,6 +996,12 @@ public class BridgeGame_26_3 extends BridgeGame {
             if (topTeam == null || topTeam.getValue() < team.getValue()) topTeam = team;
         }
         return scoreboard.getTeam(topTeam.getKey());
+    }
+
+    private Team getPlayerTeam(Player player) {
+        for (Team team : scoreboard.getTeams())
+            if (team.getEntries().contains(player.getName())) return team;
+        return null;
     }
 
     @Override
