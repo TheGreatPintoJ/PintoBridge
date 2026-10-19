@@ -19,7 +19,7 @@ bridge1: # world name - can be anything
 
   teams:
     - color: red # team color, must be in the Minecraft's color list
-      portal: # coords for team's portal
+      portal: # bounds for team's portal, accurate to decimal places
         x1: 20.0
         y1: 0.0
         z1: 0.0

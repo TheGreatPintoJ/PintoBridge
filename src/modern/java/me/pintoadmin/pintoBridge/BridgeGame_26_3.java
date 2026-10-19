@@ -659,24 +659,24 @@ public class BridgeGame_26_3 extends BridgeGame {
                         .getFirst()
                         .getName();
         int newScore = teamWins.getOrDefault(playerTeam, 0) + 1;
+        if (newScore >= 5) end(false);
         teamWins.put(playerTeam, newScore);
         updateScoreboard();
 
         // Trigger round end, next begin
         replaceCages();
         List<String> teams = getTeams();
-        Map<String, List<Player>> teamPlayers = new HashMap<>();
-        for (String teamStr : teams) {
-            teamPlayers.put(teamStr, new ArrayList<>());
-        }
         for (String teamStr : teams) {
             Vector spawn = getSpawnLoc(teamStr);
             if (spawn == null) continue;
             Vector facing = getFacing(spawn, spawn.getY());
             Vector direction = facing.clone().subtract(spawn).setY(0).normalize();
-            List<Player> teamPlayerList = teamPlayers.get(teamStr);
-            if (teamPlayerList == null) continue;
+            List<Player> teamPlayerList =
+                    scoreboard.getTeam(teamStr).getEntries().stream()
+                            .map(Bukkit::getPlayerExact)
+                            .toList();
             for (Player thisPlayer : teamPlayerList) {
+                if (thisPlayer == null) continue;
                 final UUID playerId = thisPlayer.getUniqueId();
                 List<PlayerState> state = playerStates.getOrDefault(playerId, new ArrayList<>());
                 state.addAll(List.of(PLAYING, NOBREAKRES));
@@ -686,30 +686,11 @@ public class BridgeGame_26_3 extends BridgeGame {
                 tpLocation.setDirection(direction);
                 thisPlayer.teleport(tpLocation);
 
-                Team team = scoreboard.getTeam(teamStr);
-                if (team != null) {
-                    team.addEntry(thisPlayer.getName());
-                    pintoBridge
-                            .getLogger()
-                            .info(
-                                    "%s is now on team %s"
-                                            .formatted(thisPlayer.getName(), team.getName()));
-                } else {
-                    pintoBridge.getLogger().warning("Could not find team with name: " + teamStr);
-                }
-
                 giveItems(thisPlayer, teamStr);
                 thisPlayer.setFoodLevel(20);
                 thisPlayer.setSaturation(5);
                 thisPlayer.setSaturatedRegenRate(30);
                 thisPlayer.setGameMode(GameMode.SURVIVAL);
-
-                if (!getScoreboard()
-                        .getObjective("health")
-                        .getScore(thisPlayer.getName())
-                        .isScoreSet()) {
-                    thisPlayer.damage(0.000001);
-                }
 
                 runningTasks.add(
                         new BukkitRunnable() {
@@ -806,14 +787,24 @@ public class BridgeGame_26_3 extends BridgeGame {
         Vector minVec =
                 new Vector(
                         Math.min(portalLocs[0].getX(), portalLocs[1].getX()),
-                        Math.min(portalLocs[0].getY(), portalLocs[1].getY()),
+                        Math.min(portalLocs[0].getY(), portalLocs[1].getY()) - 1,
                         Math.min(portalLocs[0].getZ(), portalLocs[1].getZ()));
         Vector maxVec =
                 new Vector(
                         Math.max(portalLocs[0].getX(), portalLocs[1].getX()),
                         Math.max(portalLocs[0].getY(), portalLocs[1].getY()),
                         Math.max(portalLocs[0].getZ(), portalLocs[1].getZ()));
-        if (!player.getLocation().toVector().isInAABB(minVec, maxVec)) { // Not the player's portal
+        pintoBridge.debug(
+                "Player location:",
+                player.getLocation().toVector().toString(),
+                "- portal min -",
+                minVec.toString(),
+                "- portal max -",
+                maxVec.toString());
+        if (!player.getLocation()
+                .add(0, 0.5, 0)
+                .toVector()
+                .isInAABB(minVec, maxVec)) { // Not the player's portal
             score(player);
         }
     }

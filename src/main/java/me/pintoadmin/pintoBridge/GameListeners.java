@@ -107,6 +107,14 @@ public class GameListeners implements Listener {
         BridgeGame game = pintoBridge.getGame(event.getPlayer().getWorld().getName());
         if (game == null) return;
         Player player = event.getPlayer();
+
+        // Compare by name: the constant is ENDER_PORTAL in 1.8 but END_PORTAL in 1.13+,
+        // and src/main is compiled against 1.8, so referencing either constant breaks on one
+        // version
+        String type = event.getPlayer().getEyeLocation().getBlock().getType().name();
+        if (type.equals("END_PORTAL") || type.equals("ENDER_PORTAL"))
+            game.entersPortal(event.getPlayer());
+
         double deathHeight = game.getDeathHeight();
         if (player.getLocation().getY() <= deathHeight) {
             if (!game.isPlaying()) player.teleport(player.getWorld().getSpawnLocation());
@@ -159,9 +167,7 @@ public class GameListeners implements Listener {
         BridgeGame game = pintoBridge.getGame(event.getPlayer().getWorld().getName());
         if (game == null) return; // Not a playing game, don't interfere
         if (event.getCause() == PlayerTeleportEvent.TeleportCause.END_PORTAL) {
-            event.setCancelled(
-                    true); // temporary until scoring established. TODO: replace with scoring logic
-            game.entersPortal(event.getPlayer());
+            event.setCancelled(true);
         }
     }
 }
