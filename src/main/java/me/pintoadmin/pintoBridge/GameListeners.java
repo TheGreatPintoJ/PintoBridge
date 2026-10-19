@@ -132,6 +132,15 @@ public class GameListeners implements Listener {
     }
 
     @EventHandler
+    public void onArrowShot(EntityShootBowEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
+        Player player = (Player) event.getEntity();
+        BridgeGame game = pintoBridge.getGame(player.getWorld().getName());
+        if (game == null) return;
+        game.arrowShoot(player);
+    }
+
+    @EventHandler
     public void onEntityDamagedByEntity(EntityDamageByEntityEvent event) {
         BridgeGame game = pintoBridge.getGame(event.getEntity().getWorld().getName());
         if (game == null) return;

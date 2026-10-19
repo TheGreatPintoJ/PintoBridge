@@ -30,6 +30,7 @@ public class BridgeGame_26_3 extends BridgeGame {
     private Scoreboard scoreboard;
     private boolean enabled;
     private List<ItemStack> startingItems = new ArrayList<>();
+    private int arrowSlot;
     private List<Material> breakables = new ArrayList<>();
     private Vector facingLocation;
     private Vector endLocation;
@@ -71,6 +72,7 @@ public class BridgeGame_26_3 extends BridgeGame {
         enabled = gameCfg.getBoolean("enabled");
         List<String> startingItemsStr = gameCfg.getStringList("startingitems");
         List<String> breakablesStr = gameCfg.getStringList("canbreak");
+        arrowSlot = gameCfg.getInt("arrowslot");
         deathHeight = gameCfg.getInt("deathheight", -64);
         canDrop = gameCfg.getBoolean("candropitems", false);
         playersPerTeam = gameCfg.getInt("playersperteam", 1);
@@ -812,6 +814,26 @@ public class BridgeGame_26_3 extends BridgeGame {
     }
 
     @Override
+    public void arrowShoot(Player player) {
+        runningTasks.add(
+                new BukkitRunnable() {
+                    int countdown = 3;
+
+                    @Override
+                    public void run() {
+                        if (countdown > 0) {
+                            player.setLevel(countdown);
+                            countdown--;
+                        } else {
+                            player.getInventory()
+                                    .setItem(arrowSlot, new ItemStack(Material.ARROW, 1));
+                            this.cancel();
+                        }
+                    }
+                }.runTaskTimer(pintoBridge, 0L, 20L)); // 20L = 1 second
+    }
+
+    @Override
     public String getName() {
         return name;
     }
@@ -910,6 +932,7 @@ public class BridgeGame_26_3 extends BridgeGame {
             }
             counter++;
         }
+        player.getInventory().setItem(arrowSlot, new ItemStack(Material.ARROW, 1));
     }
 
     @Override
