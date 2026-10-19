@@ -5,7 +5,7 @@ A clone of Hypixel's Bridge minigame.
 Compatible with spigot and spigot/paper forks, for MC26.3
 
 ## Features
-- Full FireballFight gamemode
+- Full Hypixel's Bridge gamemode
 - Configurable via `config.yml`
 - Easy to scale up teams, and theoretically infinite games
 
@@ -21,7 +21,7 @@ Compatible with spigot and spigot/paper forks, for MC26.3
 
 ### Configuration
 
-- Edit `config.yml` in the `plugins/PintoFBF/` directory to customize plugin behavior.
+- Edit `config.yml` in the `plugins/PintoBridge/` directory to customize plugin behavior.
 - The plugin will generate a default `config.yml` if one does not exist.
 
 ### Usage
