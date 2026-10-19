@@ -453,7 +453,9 @@ public class BridgeGame_26_3 extends BridgeGame {
                             restoreInventory(thisPlayer);
                         }
                         undoBlockChanges();
+                        replaceCages();
                         blockChanges.clear();
+                        cageBlocks.clear();
 
                         // Clear all playerlists
                         playerStates.clear();
