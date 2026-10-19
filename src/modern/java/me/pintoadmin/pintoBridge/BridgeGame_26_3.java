@@ -72,7 +72,6 @@ public class BridgeGame_26_3 extends BridgeGame {
         enabled = gameCfg.getBoolean("enabled");
         List<String> startingItemsStr = gameCfg.getStringList("startingitems");
         List<String> breakablesStr = gameCfg.getStringList("canbreak");
-        arrowSlot = gameCfg.getInt("arrowslot");
         deathHeight = gameCfg.getInt("deathheight", -64);
         canDrop = gameCfg.getBoolean("candropitems", false);
         playersPerTeam = gameCfg.getInt("playersperteam", 1);
@@ -825,7 +824,6 @@ public class BridgeGame_26_3 extends BridgeGame {
                             player.setLevel(countdown);
                             countdown--;
                         } else {
-                            player.setLevel(0);
                             player.getInventory()
                                     .setItem(arrowSlot, new ItemStack(Material.ARROW, 1));
                             this.cancel();
